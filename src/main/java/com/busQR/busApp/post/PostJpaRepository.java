@@ -180,33 +180,50 @@ public class PostJpaRepository {
 //            }
 //        }
 
-            // 정렬(핀 글 → 최신)
-            String orderBy = " order by p.pinnedUntil desc, p.createdAt desc ";
+        // 핀 고정 우선 + 정렬키별 보조 정렬
+        BoardSearchForm.SortKey sortKey = (form != null && form.getSort() != null) ? form.getSort() : BoardSearchForm.SortKey.LATEST;
 
-            // 목록 JPQL
-            jpql.append("select p ").append(baseFrom).append(orderBy);
-            // 카운트 JPQL
-            countJpql.append("select count(p.id) ").append(baseFrom);
+        String orderBy;
+        switch (sortKey) {
+            case LIKES:
+                orderBy = " order by p.pinnedUntil desc, p.likeCount desc, p.createdAt desc ";
+                break;
+            case COMMENTS:
+                orderBy = " order by p.pinnedUntil desc, p.commentCount desc, p.createdAt desc ";
+                break;
+            case VIEWS:
+                orderBy = " order by p.pinnedUntil desc, p.viewCount desc, p.createdAt desc ";
+                break;
+            case LATEST:
+            default:
+                orderBy = " order by p.pinnedUntil desc, p.createdAt desc ";
+                break;
+        }
 
-            // 실행
-            TypedQuery<Post> query = em.createQuery(jpql.toString(), Post.class);
-            TypedQuery<Long> countQuery = em.createQuery(countJpql.toString(), Long.class);
+        // 목록 JPQL
+        jpql.append("select p ").append(baseFrom).append(orderBy);
+        // 카운트 JPQL
+        countJpql.append("select count(p.id) ").append(baseFrom);
 
-            params.forEach((k, v) -> {
-                query.setParameter(k, v);
-                countQuery.setParameter(k, v);
-            });
+        // 실행
+        TypedQuery<Post> query = em.createQuery(jpql.toString(), Post.class);
+        TypedQuery<Long> countQuery = em.createQuery(countJpql.toString(), Long.class);
 
-            query.setFirstResult(page * size);
-            query.setMaxResults(size);
+        params.forEach((k, v) -> {
+            query.setParameter(k, v);
+            countQuery.setParameter(k, v);
+        });
 
-            List<Post> content = query.getResultList();
-            long total = countQuery.getSingleResult();
+        query.setFirstResult(page * size);
+        query.setMaxResults(size);
 
-            // 저자/보드 지연로딩이 필요하면 fetch join으로 바꾸거나, 여기서 초기화
-            // (지금은 목록에서 저자 닉네임/보드명 정도만 쓴다면 fetch join 권장)
+        List<Post> content = query.getResultList();
+        long total = countQuery.getSingleResult();
 
-            return new PageResult<>(content, total, page, size);
+        // 저자/보드 지연로딩이 필요하면 fetch join으로 바꾸거나, 여기서 초기화
+        // (지금은 목록에서 저자 닉네임/보드명 정도만 쓴다면 fetch join 권장)
+
+        return new PageResult<>(content, total, page, size);
 
     }
 

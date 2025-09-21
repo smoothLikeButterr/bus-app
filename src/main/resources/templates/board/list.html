@@ -23,11 +23,49 @@
     <input type="date" name="fromDate" th:value="${search.fromDate}">
     <input type="date" name="toDate" th:value="${search.toDate}">
 
+    <input type="hidden" name="sort" th:value="${search.sort?.name()}">
     <input type="hidden" name="page" th:value="${page}">
     <input type="hidden" name="size" th:value="${size}">
     <button type="submit">검색</button>
     <a th:href="@{|/boards/${boardCode}|}">초기화</a>
 </form>
+
+<!-- 정렬 탭 -->
+<nav style="margin:8px 0;">
+    <a th:href="@{ /boards/{code} (code=${boardCode},
+                                  page=${page}, size=${size},
+                                  field=${search.field}, query=${search.query},
+                                  author=${search.author},
+                                  fromDate=${search.fromDate}, toDate=${search.toDate},
+                                  sort='LATEST') }"
+       th:style="${search.sort?.name()=='LATEST'} ? 'font-weight:bold;text-decoration:underline' : ''">최신순</a>
+    |
+    <a th:href="@{ /boards/{code} (code=${boardCode},
+                                  page=${page}, size=${size},
+                                  field=${search.field}, query=${search.query},
+                                  author=${search.author},
+                                  fromDate=${search.fromDate}, toDate=${search.toDate},
+                                  sort='LIKES') }"
+       th:style="${search.sort?.name()=='LIKES'} ? 'font-weight:bold;text-decoration:underline' : ''">좋아요순</a>
+    |
+    <a th:href="@{ /boards/{code} (code=${boardCode},
+                                  page=${page}, size=${size},
+                                  field=${search.field}, query=${search.query},
+                                  author=${search.author},
+                                  fromDate=${search.fromDate}, toDate=${search.toDate},
+                                  sort='COMMENTS') }"
+       th:style="${search.sort?.name()=='COMMENTS'} ? 'font-weight:bold;text-decoration:underline' : ''">댓글순</a>
+    |
+    <a th:href="@{ /boards/{code} (code=${boardCode},
+                                  page=${page}, size=${size},
+                                  field=${search.field}, query=${search.query},
+                                  author=${search.author},
+                                  fromDate=${search.fromDate}, toDate=${search.toDate},
+                                  sort='VIEWS') }"
+       th:style="${search.sort?.name()=='VIEWS'} ? 'font-weight:bold;text-decoration:underline' : ''">조회수순</a>
+</nav>
+
+
 
 <!-- 목록 -->
 <table border="1" cellpadding="6" cellspacing="0" width="100%">
@@ -64,14 +102,22 @@
     <span th:text="'총 ' + ${total} + '건'">총 0건</span>
     <div>
         <a th:if="${page > 0}"
-           th:href="@{|/boards/${boardCode}?page=${page-1}&size=${size}
-                  &field=${search.field}&query=${search.query}
-                  &author=${search.author}&fromDate=${search.fromDate}&toDate=${search.toDate}|}">이전</a>
+           th:href="@{ /boards/{code} (code=${boardCode},
+                               page=${page-1}, size=${size},
+                               field=${search.field}, query=${search.query},
+                               author=${search.author},
+                               fromDate=${search.fromDate}, toDate=${search.toDate},
+                               sort=${search.sort}) }">이전</a>
+
         <span th:text="${page+1} + ' / ' + ${totalPages}">1/1</span>
+
         <a th:if="${page+1 < totalPages}"
-           th:href="@{|/boards/${boardCode}?page=${page+1}&size=${size}
-                  &field=${search.field}&query=${search.query}
-                  &author=${search.author}&fromDate=${search.fromDate}&toDate=${search.toDate}|}">다음</a>
+           th:href="@{ /boards/{code} (code=${boardCode},
+                               page=${page+1}, size=${size},
+                               field=${search.field}, query=${search.query},
+                               author=${search.author},
+                               fromDate=${search.fromDate}, toDate=${search.toDate},
+                               sort=${search.sort}) }">다음</a>
     </div>
 </div>
 </body>
