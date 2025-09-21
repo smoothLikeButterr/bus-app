@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><title th:text="'게시판 - ' + ${boardCode}">게시판</title></head>
+<body>
+<h1 th:text="${boardCode}">BOARD</h1>
+
+<!-- 글쓰기 버튼 (페이지/사이즈 유지) -->
+<p>
+    <a th:href="@{|/boards/${boardCode}/write?page=${page}&size=${size}|}">글쓰기</a>
+</p>
+
+<!-- 검색 폼 -->
+<form th:action="@{|/boards/${boardCode}|}" method="get" style="margin-bottom:12px;">
+    <select name="field">
+        <option th:value="TITLE_CONTENT" th:selected="${search.field?.name()=='TITLE_CONTENT'}">제목+내용</option>
+        <option th:value="TITLE" th:selected="${search.field?.name()=='TITLE'}">제목</option>
+        <option th:value="CONTENT" th:selected="${search.field?.name()=='CONTENT'}">내용</option>
+        <option th:value="AUTHOR" th:selected="${search.field?.name()=='AUTHOR'}">작성자</option>
+    </select>
+
+    <input type="text" name="query" placeholder="검색어" th:value="${search.query}">
+    <input type="text" name="author" placeholder="작성자 닉네임" th:value="${search.author}">
+    <input type="date" name="fromDate" th:value="${search.fromDate}">
+    <input type="date" name="toDate" th:value="${search.toDate}">
+
+    <input type="hidden" name="page" th:value="${page}">
+    <input type="hidden" name="size" th:value="${size}">
+    <button type="submit">검색</button>
+    <a th:href="@{|/boards/${boardCode}|}">초기화</a>
+</form>
+
+<!-- 목록 -->
+<table border="1" cellpadding="6" cellspacing="0" width="100%">
+    <thead>
+    <tr>
+        <th style="width:60px;">번호</th>
+        <th>제목</th>
+        <th style="width:140px;">작성자</th>
+        <th style="width:160px;">작성시각</th>
+        <th style="width:80px;">좋아요</th>
+        <th style="width:80px;">댓글</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:if="${#lists.isEmpty(posts)}">
+        <td colspan="6">검색 결과가 없습니다.</td>
+    </tr>
+    <tr th:each="p : ${posts}">
+        <td th:text="${p.id}">1</td>
+        <td>
+            <a th:href="@{|/posts/${p.id}?page=${page}&size=${size}|}"
+               th:text="${p.title}">제목</a>
+        </td>
+        <td th:text="${p.author.nickname}">닉네임</td>
+        <td th:text="${#temporals.format(p.createdAt,'yyyy-MM-dd HH:mm')}">시간</td>
+        <td th:text="${p.likeCount}">0</td>
+        <td th:text="${p.commentCount}">0</td>
+    </tr>
+    </tbody>
+</table>
+
+<!-- 페이징 -->
+<div style="margin-top:10px;">
+    <span th:text="'총 ' + ${total} + '건'">총 0건</span>
+    <div>
+        <a th:if="${page > 0}"
+           th:href="@{|/boards/${boardCode}?page=${page-1}&size=${size}
+                  &field=${search.field}&query=${search.query}
+                  &author=${search.author}&fromDate=${search.fromDate}&toDate=${search.toDate}|}">이전</a>
+        <span th:text="${page+1} + ' / ' + ${totalPages}">1/1</span>
+        <a th:if="${page+1 < totalPages}"
+           th:href="@{|/boards/${boardCode}?page=${page+1}&size=${size}
+                  &field=${search.field}&query=${search.query}
+                  &author=${search.author}&fromDate=${search.fromDate}&toDate=${search.toDate}|}">다음</a>
+    </div>
+</div>
+</body>
+</html>

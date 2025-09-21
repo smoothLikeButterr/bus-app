@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><title th:text="${post.title}">상세</title></head>
+
+<script>
+    (function () {
+      // Thymeleaf로 현재 게시판 코드와 페이지 파라미터를 주입해 기본 목록 URL 구성
+      var boardCode = /*[[${boardCode}]]*/ 'FREE';
+      var page = /*[[${page}]]*/ 0;
+      var size = /*[[${size}]]*/ 20;
+
+      // 기본 목록 URL (page/size가 모델에 없으면 0/20으로)
+      var defaultListUrl = '/boards/' + boardCode + '?page=' + page + '&size=' + size;
+
+      // 리스트 → 상세로 들어온 경우, referrer가 /boards/ 를 포함하면 그 URL을 저장
+      try {
+        if (document.referrer && document.referrer.indexOf('/boards/') !== -1) {
+          sessionStorage.setItem('lastListUrl', document.referrer);
+        }
+      } catch (e) { /* storage가 막힌 환경 대비 무시 */ }
+
+      // 뒤로가기 시 목록으로 보내는 핸들러
+      function goBackToList() {
+        var url = defaultListUrl;
+        try {
+          var saved = sessionStorage.getItem('lastListUrl');
+          if (saved) url = saved;
+        } catch (e) { /* 무시 */ }
+        // replace를 쓰면 '앞으로가기' 스택이 지저분해지지 않음
+        location.replace(url);
+      }
+
+      // popstate 발생하도록 더미 state를 한 번 쌓아둔다.
+      // (일부 브라우저에서 첫 back에 popstate가 안 뜨는 걸 방지)
+      try {
+        history.pushState({ page: 'detail' }, '', location.href);
+        window.addEventListener('popstate', function (e) {
+          // 브라우저 뒤로가기 눌리면 목록으로
+          goBackToList();
+        });
+      } catch (e) { /* 히스토리 API 불가 환경 대비 */ }
+    })();
+</script>
+
+<body>
+<h1 th:text="${post.title}">제목</h1>
+<div>
+    <span th:text="${post.author.nickname}">작성자</span> ·
+    <span th:text="${#temporals.format(post.createdAt,'yyyy-MM-dd HH:mm')}">작성시각</span>
+</div>
+
+<!-- 리액션 버튼 -->
+<form th:action="@{|/posts/${post.id}/reactions?page=${page}&size=${size}|}" method="post" style="display:inline;">
+    <input type="hidden" name="type" value="LIKE"/>
+    <button type="submit">👍</button>
+    <span th:text="${post.likeCount}">0</span>
+</form>
+<form th:action="@{|/posts/${post.id}/reactions?page=${page}&size=${size}|}" method="post" style="display:inline; margin-left:8px;">
+    <input type="hidden" name="type" value="DISLIKE"/>
+    <button type="submit">👎</button>
+    <span th:text="${post.dislikeCount}">0</span>
+</form>
+
+<hr/>
+<div th:utext="${#strings.escapeXml(post.content).replaceAll('\n','<br/>')}">내용</div>
+
+<hr/>
+<h2>댓글</h2>
+
+<!-- 댓글 목록 -->
+<div th:if="${#lists.isEmpty(comments)}">아직 댓글이 없습니다.</div>
+<ul th:if="${!#lists.isEmpty(comments)}" style="list-style:none; padding-left:0;">
+    <li th:each="c : ${comments}" th:style="|margin-left:${c.depth * 20}px;|">
+    <div>
+            <strong th:text="${c.author.nickname}">닉네임</strong>
+            <span> · </span>
+            <small th:text="${#temporals.format(c.createdAt,'yyyy-MM-dd HH:mm')}">시간</small>
+        </div>
+        <div th:text="${c.content}">내용</div>
+
+        <!-- 대댓글 폼 토글 (아주 간단한 방식) -->
+        <details style="margin:6px 0;">
+            <summary>답글 달기</summary>
+            <form th:action="@{|/posts/${post.id}/comments|}"
+                  th:object="${commentForm}" method="post">
+                <input type="hidden" name="parentId" th:value="${c.id}"/>
+                <div><textarea th:field="*{content}" rows="3" cols="70" required></textarea></div>
+                <button type="submit">등록</button>
+            </form>
+        </details>
+        <hr/>
+    </li>
+</ul>
+
+<!-- 새 댓글 작성 -->
+<h3>댓글 작성</h3>
+<form th:action="@{|/posts/${post.id}/comments|}"
+      th:object="${commentForm}" method="post">
+    <input type="hidden" name="parentId" value=""/>
+    <div><textarea th:field="*{content}" rows="4" cols="80" required></textarea></div>
+    <button type="submit">등록</button>
+</form>
+
+<p><a th:href="@{|/boards/${boardCode}?page=${page}&size=${size}|}">목록으로</a></p>
+</body>
+</html>
